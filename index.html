@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>טופס תביעה להחזר הוצאות אמבולטוריות – מנורה מבטחים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #1d3557;
+  --orange: #e07b2c;
+  --border: #aaa;
+  --label-bg: #e8eef5;
+  --sec-bg: #1d3557;
+  --sec-color: #fff;
+  --font: 'Heebo', 'Arial Hebrew', Arial, sans-serif;
+}
+body { font-family: var(--font); font-size: 11.5px; color: #111; background: #d0d0d0; direction: rtl; line-height: 1.5; }
+.controls { position: fixed; top: 12px; left: 12px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; }
+.btn { padding: 9px 18px; border: none; border-radius: 5px; cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.btn-print { background: var(--navy); color: #fff; }
+.btn-pdf   { background: #1a56db; color: #fff; }
+.btn-clear { background: #888; color: #fff; }
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .6; cursor: wait; }
+
+/* A4 page */
+.page { width: 210mm; min-height: 297mm; margin: 20px auto; background: #fff; padding: 8mm 12mm 10mm 16mm; box-shadow: 0 3px 14px rgba(0,0,0,.3); position: relative; overflow: hidden; }
+
+/* Logo header */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 2px solid var(--orange); }
+.logo-area { display: flex; flex-direction: column; align-items: flex-end; }
+.logo-text { font-size: 18px; font-weight: 800; color: var(--navy); line-height: 1.1; }
+.logo-sub { font-size: 10px; color: var(--orange); font-weight: 600; }
+.contact-area { font-size: 9px; color: #444; text-align: left; line-height: 1.6; }
+
+/* Section title bar */
+.sec-title { background: var(--sec-bg); color: var(--sec-color); padding: 4px 9px; font-weight: 700; font-size: 11.5px; margin-top: 6px; margin-bottom: 0; }
+
+/* Form tables */
+.ftable { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-top: none; }
+.ftable td { border: 1px solid var(--border); padding: 2px 6px; vertical-align: middle; }
+.lbl { background: var(--label-bg); font-weight: 600; font-size: 10px; white-space: nowrap; min-width: 80px; }
+.ftable input[type="text"], .ftable input[type="tel"], .ftable input[type="email"], .ftable input[type="date"], .ftable select {
+  width: 100%; border: none; border-bottom: 1px solid #666; padding: 1px 2px; font-family: var(--font); font-size: 11.5px; background: transparent; outline: none;
+}
+
+/* Radio/checkbox rows */
+.radio-group { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 4px 0; }
+.radio-group label { display: flex; align-items: center; gap: 4px; font-size: 11.5px; cursor: pointer; }
+.check-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 3px; font-size: 10.5px; line-height: 1.5; }
+.check-row input { margin-top: 3px; flex-shrink: 0; }
+
+/* Inline text input */
+.inline-inp { border: none; border-bottom: 1px solid #555; font-family: var(--font); font-size: 11.5px; outline: none; background: transparent; }
+.inline-inp-sm { width: 60px; }
+.inline-inp-md { width: 120px; }
+.inline-inp-lg { width: 200px; }
+
+/* Claim type checkboxes */
+.claim-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; border: 1px solid var(--border); border-top: none; padding: 5px 8px; }
+.claim-type-grid label { display: flex; align-items: center; gap: 4px; font-size: 10.5px; cursor: pointer; }
+
+/* Claim table */
+.claim-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-top: none; }
+.claim-table th { background: var(--label-bg); border: 1px solid var(--border); padding: 3px 5px; font-size: 10px; font-weight: 700; text-align: center; }
+.claim-table td { border: 1px solid var(--border); padding: 2px 4px; vertical-align: middle; height: 22px; }
+.claim-table td input, .claim-table td select { width: 100%; border: none; font-family: var(--font); font-size: 10.5px; background: transparent; outline: none; }
+
+/* Sig section */
+.sig-section { padding: 6px 0 3px; }
+.sig-row { display: flex; align-items: flex-end; gap: 14px; }
+.sig-field { display: flex; flex-direction: column; gap: 2px; }
+.sig-field label { font-size: 10px; font-weight: 600; }
+.canvas-wrap { border: 1px solid #aaa; background: #fafafa; cursor: crosshair; }
+canvas { display: block; }
+.sig-clear { font-size: 9px; padding: 2px 6px; margin-top: 2px; background: #eee; border: 1px solid #ccc; border-radius: 2px; cursor: pointer; font-family: var(--font); }
+.date-field { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.date-field label { font-size: 10px; font-weight: 600; }
+.date-field input { border: none; border-bottom: 1px solid #555; padding: 2px 3px; font-family: var(--font); font-size: 11.5px; width: 100%; outline: none; direction: ltr; }
+
+/* Payment icons */
+.pay-options { display: flex; gap: 20px; align-items: center; padding: 6px 0; }
+.pay-opt { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.pay-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; border: 2px solid #ddd; }
+.pay-icon.bank { background: #f0f4ff; color: var(--navy); font-size: 20px; }
+.pay-icon.bit { background: #eee; color: #333; }
+.pay-icon.pay-app { background: #fff3e0; color: #e65100; }
+.pay-opt input[type="radio"] { margin-top: 2px; }
+.pay-opt span { font-size: 9.5px; }
+
+/* Text blocks */
+.text-block { font-size: 10px; line-height: 1.6; padding: 4px 8px; border: 1px solid var(--border); border-top: none; background: #fafafa; }
+.notice-bold { border: 1.5px solid #111; padding: 5px 9px; font-size: 10px; font-weight: 600; margin: 5px 0; line-height: 1.5; }
+.section-note { font-size: 9.5px; color: #444; margin: 3px 0 3px 0; font-style: italic; }
+
+/* Page footer */
+.page-footer { position: absolute; bottom: 6mm; right: 12mm; left: 16mm; border-top: 1.5px solid var(--orange); padding-top: 3px; display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555; }
+.page-num { font-weight: 600; color: var(--navy); }
+
+/* Witness table on part B */
+.wit-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-top: none; }
+.wit-table td { border: 1px solid var(--border); padding: 3px 6px; vertical-align: middle; }
+
+/* Minor table */
+.minor-section { border: 1px solid var(--border); border-top: none; padding: 6px 8px; }
+.minor-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 5px; align-items: end; }
+.fg { display: flex; flex-direction: column; gap: 2px; }
+.fg label { font-size: 9.5px; font-weight: 600; }
+.fg input { border: none; border-bottom: 1px solid #555; font-family: var(--font); font-size: 11px; outline: none; width: 100%; }
+canvas.sig-sm { display: block; }
+
+@media print { .controls { display: none; } .page { margin: 0; box-shadow: none; } }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn btn-print" onclick="window.print()">הדפס</button>
+  <button class="btn btn-pdf" id="btnPdf" onclick="downloadPDF()">הורד PDF</button>
+  <button class="btn btn-clear" onclick="resetForm()">נקה טופס</button>
+</div>
+
+<!-- ═══════ PAGE 1 – חלק א' (sections א, ב, ג-agent) ═══════ -->
+<div class="page" id="page1">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="contact-area">
+      יש להגיש טופס זה באמצעות דוא"ל t-health@menora.co.il או בפקס 03-7601046 או בדואר הר"מ<br>
+      לפניות ובירורים בנושא תביעה מוקד שירות לקוחות בטלפון מס': 2000*<br>
+      Moked-health@menora.co.il ·· או באמצעות דוא"ל
+    </div>
+    <div class="logo-area">
+      <div class="logo-text">מנורה<br>מבטחים</div>
+      <div class="logo-sub">ביטוח בע"מ</div>
+    </div>
+  </div>
+
+  <!-- Form title -->
+  <div style="text-align:center; margin: 6px 0 3px;">
+    <div style="font-size:16px; font-weight:800; color:var(--navy);">טופס תביעה להחזר הוצאות אמבולטוריות</div>
+    <div style="font-size:10.5px; font-weight:600;">ייעוץ עם רופא מומחה, בדיקות אבחנתיות, טיפולי פיזיותרפיה, בדיקות הריון,<br>טיפולי הפריה, התפתחות הילד, רפואה משלימה</div>
+  </div>
+
+  <!-- Intro note -->
+  <div style="font-size:9.5px; line-height:1.6; border:1px solid #ccc; padding:4px 8px; background:#fafafa; margin-bottom:5px;">
+    <strong>מבוטח/ת נכבד/ה,</strong><br>
+    לידיעתך, המוגש מבוטח על פי כתב שירות יש לפנות לנותן השירות בהתאם בהתאם לכתב השירות.<br>
+    <strong>באפשרותך לתבוע גם את הביטוח המשלים של קופת החולים ו/או את הביטוח הפרטי בחברה אחרת</strong>, באם קיים ברשותך.
+    במידה ותעשה כך, יוחזר לך ההפרש בין סכום הקבלה לסכום שהוחזר לך על ידי הגורם האחר ועד לתקרה הנקובה בתנאי הפוליסה ולא ניכוי כיסוי השתתפות עצמית.
+  </div>
+
+  <!-- Filler selector -->
+  <div style="font-size:10px; margin-bottom:4px; padding:3px 6px; border:1px solid #ddd;">
+    <strong>יש לסמן בעיגול את הגורם הממלא את טופס התביעה:</strong>&nbsp;
+    <label style="margin-left:10px;"><input type="radio" name="filler" value="insured"> מבוטח/ת</label>
+    <label style="margin-left:10px;"><input type="radio" name="filler" value="child"> בן/בת של מבוטח/ת</label>
+    <label style="margin-left:10px;"><input type="radio" name="filler" value="parent"> הורה של מבוטח/ת (קטין)</label>
+    <label style="margin-left:10px;"><input type="radio" name="filler" value="agent"> סוכן ביטוח</label>
+    <label><input type="radio" name="filler" value="lawyer"> עו"ד</label>
+  </div>
+
+  <!-- Claim type -->
+  <div class="sec-title">סוג התביעה (יש לסמן ב-X):</div>
+  <div class="claim-type-grid">
+    <label><input type="checkbox" id="ct1"> ייעוץ עם רופא מומחה</label>
+    <label><input type="checkbox" id="ct2"> בדיקות אבחנתיות</label>
+    <label><input type="checkbox" id="ct3"> טיפול פיזיותרפיה</label>
+    <label><input type="checkbox" id="ct4"> בדיקות הריון</label>
+    <label><input type="checkbox" id="ct5"> טיפולי הפריה</label>
+    <label><input type="checkbox" id="ct6"> התפתחות הילד</label>
+    <label><input type="checkbox" id="ct7"> רפואה משלימה</label>
+    <label><input type="checkbox" id="ct8"> אחר: <input type="text" class="inline-inp inline-inp-md" id="ct_other"></label>
+  </div>
+
+  <!-- Section א: Insured details -->
+  <div class="sec-title" style="margin-top:5px;">א. פרטי המבוטח</div>
+  <table class="ftable">
+    <tr>
+      <td class="lbl" style="width:14%">שם משפחה</td>
+      <td style="width:20%"><input type="text" id="ins_family"></td>
+      <td class="lbl" style="width:12%">שם פרטי</td>
+      <td style="width:18%"><input type="text" id="ins_first"></td>
+      <td class="lbl" style="width:13%">מספר זהות</td>
+      <td style="width:12%"><input type="text" id="ins_id" maxlength="9" dir="ltr"></td>
+      <td class="lbl" style="width:12%">מספר הפוליסה</td>
+      <td><input type="text" id="ins_policy" dir="ltr"></td>
+    </tr>
+    <tr>
+      <td class="lbl">שם קופת חולים</td>
+      <td><input type="text" id="ins_hmo"></td>
+      <td class="lbl">רופא משפחה</td>
+      <td><input type="text" id="ins_gp"></td>
+      <td class="lbl">סניף</td>
+      <td><input type="text" id="ins_branch"></td>
+      <td class="lbl" style="font-size:9.5px;">שם הרופא המקצועי / מכון מטפל</td>
+      <td><input type="text" id="ins_specialist"></td>
+    </tr>
+    <tr>
+      <td class="lbl">מס' טלפון בית</td>
+      <td><input type="tel" id="ins_tel_home" dir="ltr"></td>
+      <td class="lbl">מס' טלפון נייד</td>
+      <td><input type="tel" id="ins_tel_mobile" dir="ltr"></td>
+      <td class="lbl" colspan="2">דוא"ל</td>
+      <td colspan="2"><input type="email" id="ins_email" dir="ltr"></td>
+    </tr>
+  </table>
+
+  <!-- Section ב: Communication method -->
+  <div class="sec-title" style="margin-top:5px;">ב. אופן משלוח הודעות – נודה לבחור את אופן ההתקשרות</div>
+  <div style="border:1px solid var(--border); border-top:none; padding:5px 8px;">
+    <div class="radio-group">
+      <label><input type="radio" name="comm" value="email" id="comm_email" onchange="toggleComm()"> דואר אלקטרוני (מאובטח)</label>
+      <label><input type="radio" name="comm" value="mail" id="comm_mail" onchange="toggleComm()"> דואר ישראל</label>
+    </div>
+
+    <!-- Email fields -->
+    <div id="comm_email_fields" style="display:none; margin-top:4px;">
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+        <span style="font-size:10.5px; font-weight:600;">כתובת דוא"ל:</span>
+        <input type="email" class="inline-inp inline-inp-lg" id="email_addr" dir="ltr" style="width:220px;">
+      </div>
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+        <span style="font-size:10px;">מס' טלפון נייד (חובה לציין לצורך משלוח סיסמה לפתיחת הודעת דוא"ל):</span>
+        <input type="tel" class="inline-inp" id="email_mobile" dir="ltr" style="width:130px;">
+      </div>
+      <div style="font-size:10px; margin-bottom:3px;">
+        אני מעוניין/ת כי כתובת דוא"ל זו תשמש גם בתביעות עתידיות:
+        <label style="margin-right:8px;"><input type="radio" name="future_email" value="yes"> כן</label>
+        <label><input type="radio" name="future_email" value="no"> לא</label>
+      </div>
+    </div>
+
+    <!-- Israel mail fields -->
+    <div id="comm_mail_fields" style="display:none; margin-top:4px;">
+      <div style="display:grid; grid-template-columns: auto 1fr auto 1fr auto 1fr auto 0.6fr; gap:4px; align-items:center; font-size:10.5px;">
+        <span class="lbl" style="padding:2px 5px;">רחוב</span>
+        <input type="text" class="inline-inp" id="mail_street" style="width:100%;">
+        <span class="lbl" style="padding:2px 5px;">מס' בית</span>
+        <input type="text" class="inline-inp" id="mail_num" style="width:100%;">
+        <span class="lbl" style="padding:2px 5px;">עיר</span>
+        <input type="text" class="inline-inp" id="mail_city" style="width:100%;">
+        <span class="lbl" style="padding:2px 5px;">מיקוד</span>
+        <input type="text" class="inline-inp" id="mail_zip" dir="ltr" style="width:100%;">
+      </div>
+    </div>
+
+    <!-- Legal notice block -->
+    <div class="notice-bold" style="margin-top:6px; font-size:9.5px;">
+      כלל שהינך מיוצג ע"י עורך דין, הודעות בדבר מהלך התביעה יישלחו אליו. <strong>במידה ומבקש לשלוח הודעות אלו באמצעות דוא"ל, אנא הקפד על מילוי כתובת דוא"ל של עורך הדין:</strong>
+      <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:4px;">
+        <label style="display:flex;gap:4px;align-items:center;font-size:10px;"><input type="radio" name="lawyer_comm" value="email"> דואר אלקטרוני (מאובטח)</label>
+        <label style="display:flex;gap:4px;align-items:center;font-size:10px;"><input type="radio" name="lawyer_comm" value="mail"> דואר ישראל, כתובת למשלוח דואר</label>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:3px; font-size:10px;">
+        <span>כתובת דוא"ל:</span>
+        <input type="email" class="inline-inp" id="lawyer_email" dir="ltr" style="width:200px;">
+        <span>מס' טלפון נייד (חובה לציין לצורך משלוח סיסמה לפתיחת הודעת דוא"ל):</span>
+        <input type="tel" class="inline-inp" id="lawyer_mobile" dir="ltr" style="width:120px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Section ג: Insurance agent -->
+  <div class="sec-title" style="margin-top:5px;">אישור למשלוח מסמכים ומידע לסוכן הביטוח</div>
+  <table class="ftable">
+    <tr>
+      <td class="lbl" style="width:18%">שם הסוכן</td>
+      <td colspan="3"><input type="text" id="agent_name"></td>
+    </tr>
+    <tr>
+      <td class="lbl">מס' טלפון נייד של הסוכן</td>
+      <td style="width:26%"><input type="tel" id="agent_mobile" dir="ltr"></td>
+      <td class="lbl" style="width:18%">כתובת דוא"ל של הסוכן</td>
+      <td><input type="email" id="agent_email" dir="ltr"></td>
+    </tr>
+  </table>
+  <div class="text-block" style="font-size:9.5px;">
+    הריני מאשר/ת בזאת למנורה מבטחים ביטוח (להלן – "מנורה") לשלוח ו/או להעביר לידי סוכן הביטוח (להלן – "סוכן הביטוח") את כל התכתבויות ו/או המסמכים הקשורים לתביעה זו, לרבות מידע רפואי בקשר עם תביעה זו ו/או מידע שנמסר עם פתיחת התביעה אבל התביעה, ולא תהא לי כל טענה ו/או תביעה כלפי "מנורה" בכל הנוגע להעברת המידע ו/או המסמכים, לרבות המידע הרפואי לסוכן הביטוח ו/או באמצעותו.
+  </div>
+  <div style="border:1px solid var(--border); border-top:none; padding:5px 8px;">
+    <div class="sig-row">
+      <div class="sig-field">
+        <label>חתימה:</label>
+        <div class="canvas-wrap"><canvas id="sig_agent_auth" width="220" height="55"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_agent_auth')">נקה</button>
+      </div>
+      <div class="date-field">
+        <label>תאריך:</label>
+        <input type="date" id="date_agent">
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>www.menoramivt.co.il &nbsp;|&nbsp; מיקוד 6100802 &nbsp;|&nbsp; ת.ד. 927 תל-אביב</span>
+    <span class="page-num">עמוד 1 מתוך 3</span>
+    <span>☎ 2000* &nbsp;|&nbsp; 6100802</span>
+  </div>
+</div>
+
+<!-- ═══════ PAGE 2 – חלק א' (sections ג-claims, ד, ה, ו) ═══════ -->
+<div class="page" id="page2">
+
+  <div class="page-header">
+    <div class="contact-area">
+      יש להגיש טופס זה באמצעות דוא"ל t-health@menora.co.il או בפקס 03-7601046 או בדואר הר"מ<br>
+      לפניות ובירורים בנושא תביעה מוקד שירות לקוחות בטלפון מס': 2000*
+    </div>
+    <div class="logo-area">
+      <div class="logo-text">מנורה<br>מבטחים</div>
+      <div class="logo-sub">ביטוח בע"מ</div>
+    </div>
+  </div>
+
+  <!-- Section ג: Claim details table -->
+  <div class="sec-title">ג. פירוט התביעה</div>
+  <div style="font-size:9.5px; border:1px solid var(--border); border-top:none; padding:2px 8px; background:#f9f9f9;">פירוט לבקשה להחזר הוצאות רפואיות – יש לצרף קבלות</div>
+  <table class="claim-table">
+    <thead>
+      <tr>
+        <th style="width:14%">תאריך קבלת הטיפול</th>
+        <th style="width:24%">שם רופא/מכון מטפל</th>
+        <th style="width:13%">הסכום בש"ח</th>
+        <th>פרטי ההוצאה<br><span style="font-weight:400;font-size:9px;">(ייעוץ עם רופא מומחה, בדיקה אבחנתית, טיפול פיזיותרפיה,<br>בדיקות הריון, טיפולי הפריה, התפתחות הילד, רפואה משלימה וכו')</span></th>
+      </tr>
+    </thead>
+    <tbody id="claim_rows">
+      <tr><td><input type="date" dir="ltr"></td><td><input type="text"></td><td><input type="text" dir="ltr"></td><td><input type="text"></td></tr>
+      <tr><td><input type="date" dir="ltr"></td><td><input type="text"></td><td><input type="text" dir="ltr"></td><td><input type="text"></td></tr>
+      <tr><td><input type="date" dir="ltr"></td><td><input type="text"></td><td><input type="text" dir="ltr"></td><td><input type="text"></td></tr>
+      <tr><td><input type="date" dir="ltr"></td><td><input type="text"></td><td><input type="text" dir="ltr"></td><td><input type="text"></td></tr>
+      <tr><td><input type="date" dir="ltr"></td><td><input type="text"></td><td><input type="text" dir="ltr"></td><td><input type="text"></td></tr>
+    </tbody>
+  </table>
+
+  <!-- Section ד: Additional insurance -->
+  <div class="sec-title" style="margin-top:5px;">ד. ביטוחי בריאות נוספים</div>
+  <div style="border:1px solid var(--border); border-top:none; padding:5px 8px;">
+    <div style="margin-bottom:4px; font-size:10.5px;">
+      האם הגשת/בכוונתך להגיש את תביעתך לביטוח המשלים בקופה או לביטוח פרטי אחר?&nbsp;
+      <label><input type="radio" name="other_ins1" value="no"> לא</label>&nbsp;&nbsp;
+      <label><input type="radio" name="other_ins1" value="yes"> כן, פרט: <input type="text" class="inline-inp inline-inp-lg" id="other_ins1_detail"></label>
+    </div>
+    <div style="margin-bottom:3px; font-size:10.5px;">
+      האם יש לך ביטוח משלים בקופת חולים?&nbsp;
+      <label><input type="radio" name="other_ins2" value="no"> לא</label>&nbsp;&nbsp;
+      <label><input type="radio" name="other_ins2" value="yes"> כן, משנת <input type="text" class="inline-inp inline-inp-sm" id="ins2_year">, בחברת <input type="text" class="inline-inp inline-inp-md" id="ins2_company"></label>
+    </div>
+    <div style="margin-bottom:3px; font-size:10.5px;">
+      האם יש לך ביטוח פרטי אחר?&nbsp;
+      <label><input type="radio" name="other_ins3" value="no"> לא</label>&nbsp;&nbsp;
+      <label><input type="radio" name="other_ins3" value="yes"> כן, בחברת <input type="text" class="inline-inp inline-inp-md" id="ins3_company"></label>
+    </div>
+    <div style="margin-bottom:5px; font-size:10.5px;">
+      האם יש לך ביטוח כלשהו במקום העבודה?&nbsp;
+      <label><input type="radio" name="other_ins4" value="no"> לא</label>&nbsp;&nbsp;
+      <label><input type="radio" name="other_ins4" value="yes"> כן, בחברת <input type="text" class="inline-inp inline-inp-md" id="ins4_company"></label>
+    </div>
+
+    <div style="font-size:9.5px; color:#444; margin-bottom:4px;">* באפשרותך לתבוע גם את הביטוח המשלים של קופת החולים ו/או את הביטוח הפרטי בחברה אחרת, באם קיים ברשותך. במידה ותעשה כך, יוחזר לך ההפרש בין הסכום הנתבע לסכום הנשלם. שים לב כי לפי תנאי הפוליסה, כאשר הפוליסה מקנה זכאות לשיפוי, <strong>בכל מקרה,</strong> סכום ההחזר מכל הגורמים יחד לא יעלה על ההוצאה בפועל.</div>
+
+    <div class="check-row"><input type="radio" name="ins_decl" value="1"><label>הריני מצהיר/ת כי קבלתי את הביטוח המקורית ברשות! וכי במידה ואתבע את הביטוח המשלים בקופות החולים / ביטוח בחברה אחרת, אדווח על כך למנורה מבטחים על כך.</label></div>
+    <div class="check-row"><input type="radio" name="ins_decl" value="2"><label>הריני מצהיר/ת כי קבלתי את הקבלות המקוריות לביטוח המשלים בקופות חולים / ביטוח פרטי בחברה אחרת ו/או לחזור על סך <input type="text" class="inline-inp inline-inp-sm" id="ins_decl_sum"> ₪.</label></div>
+
+    <div class="sig-row" style="margin-top:6px;">
+      <div class="sig-field">
+        <label>חתימה:</label>
+        <div class="canvas-wrap"><canvas id="sig_ins" width="200" height="50"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_ins')">נקה</button>
+      </div>
+      <div class="date-field"><label>תאריך:</label><input type="date" id="date_ins"></div>
+    </div>
+  </div>
+
+  <!-- Section ה: Payment method -->
+  <div class="sec-title" style="margin-top:5px;">ה. אופן העברת התשלום</div>
+  <div style="border:1px solid var(--border); border-top:none; padding:5px 8px;">
+    <div style="font-size:10px; margin-bottom:4px;">סמן את האפשרות המועדפת עליך להעברת התשלום:</div>
+    <div class="pay-options">
+      <label class="pay-opt">
+        <div class="pay-icon bank">🏦</div>
+        <input type="radio" name="pay_method" value="bank" onchange="togglePay(this)">
+        <span>העברה בנקאית</span>
+      </label>
+      <label class="pay-opt">
+        <div class="pay-icon pay-app" style="background:#fff3e0; font-size:11px;">PAY</div>
+        <input type="radio" name="pay_method" value="pay" onchange="togglePay(this)">
+        <span>Pay</span>
+      </label>
+      <label class="pay-opt">
+        <div class="pay-icon bit" style="background:#eee; font-size:11px; color:#333;">bit</div>
+        <input type="radio" name="pay_method" value="bit" onchange="togglePay(this)">
+        <span>Bit</span>
+      </label>
+    </div>
+
+    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; font-size:10.5px; margin-bottom:3px;">
+      <span>מספר טלפון נייד המקושר לאפליקציה שנבחרה:</span>
+      <input type="tel" class="inline-inp" id="pay_mobile" dir="ltr" style="width:130px;">
+      <span>מס' ת.ז. רישום לאפליקציה שנבחרה:</span>
+      <input type="text" class="inline-inp" id="pay_id" dir="ltr" style="width:100px;">
+    </div>
+
+    <div id="bank_details" style="display:none; margin-top:5px;">
+      <div style="font-size:9.5px; color:#444; margin-bottom:3px;">במידה ובחרת בהעברה בנקאית ובמקרים בהם לא יתאפשר תשלום באפליקציה שנבחרה, יועבר התשלום לפרטי החשבון הבאים:</div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:10.5px;">
+        <span>שם בנק</span><input type="text" class="inline-inp" id="bank_name" style="width:100px;">
+        <span>מס' סניף</span><input type="text" class="inline-inp" id="bank_branch" dir="ltr" style="width:60px;">
+        <span>מס' חשבון</span><input type="text" class="inline-inp" id="bank_acct" dir="ltr" style="width:110px;">
+        <span>שם בעל החשבון</span><input type="text" class="inline-inp" id="bank_owner" style="width:130px;">
+      </div>
+      <div style="font-size:9px; color:#666; margin-top:3px;">* בבחירת העברה בנקאית יש לצרף צילום המחאה מבוטלת את אישור פרטי החשבון מהבנק.<br>* התשלום יועבר למבוטח בלבד.</div>
+    </div>
+
+    <div class="sig-row" style="margin-top:5px;">
+      <div class="sig-field">
+        <label>חתימה:</label>
+        <div class="canvas-wrap"><canvas id="sig_pay" width="200" height="50"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_pay')">נקה</button>
+      </div>
+      <div class="date-field"><label>תאריך:</label><input type="date" id="date_pay"></div>
+    </div>
+  </div>
+
+  <!-- Section ו: Declaration -->
+  <div class="sec-title" style="margin-top:5px;">ו. הצהרת המבוטח או התובע בשמו</div>
+  <div class="text-block">
+    אני החתום מטה, מצהיר/ת כי תשובותי ובכל הפרטים אשר מסרתי לעיל ואמסור להלן הינם מלאים ונכונים.
+    ידוע לי על פי הוראות החוק, מסירת מידע כוזב או מטעה עלולה לגרום לביטול זכות החזרה ו/או לשלילת זכות המבוטח על פי הפוליסה.
+  </div>
+  <div style="border:1px solid var(--border); border-top:none; padding:5px 8px;">
+    <div style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+      <div class="date-field"><label>תאריך:</label><input type="date" id="date_decl"></div>
+      <div class="fg" style="flex:1; min-width:120px;"><label>שם החותם:</label><input type="text" id="decl_name"></div>
+      <div class="fg" style="min-width:100px;"><label>מס' תעודת זהות:</label><input type="text" id="decl_id" dir="ltr" maxlength="9"></div>
+      <div class="sig-field">
+        <label>חתימה X:</label>
+        <div class="canvas-wrap"><canvas id="sig_decl" width="180" height="50"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_decl')">נקה</button>
+      </div>
+    </div>
+    <div style="margin-top:4px; font-size:10px;">
+      יחס הקרבה של המבוטח לחותם (במידה והחותם אינו המבוטח): <input type="text" class="inline-inp inline-inp-lg" id="decl_relation">
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>www.menoramivt.co.il &nbsp;|&nbsp; מיקוד 6100802 &nbsp;|&nbsp; ת.ד. 927 תל-אביב</span>
+    <span class="page-num">עמוד 2 מתוך 3</span>
+    <span>☎ 2000* &nbsp;|&nbsp; 6100802</span>
+  </div>
+</div>
+
+<!-- ═══════ PAGE 3 – חלק ב' (Medical Release) ═══════ -->
+<div class="page" id="page3">
+
+  <div class="page-header">
+    <div class="contact-area">
+      יש להגיש טופס זה באמצעות דוא"ל t-health@menora.co.il או בפקס 03-7601046 או בדואר הר"מ<br>
+      לפניות ובירורים בנושא תביעה מוקד שירות לקוחות בטלפון מס': 2000*
+    </div>
+    <div class="logo-area">
+      <div class="logo-text">מנורה<br>מבטחים</div>
+      <div class="logo-sub">ביטוח בע"מ</div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin: 5px 0 4px;">
+    <div style="font-size:15px; font-weight:800; color:var(--navy);">חלק ב' – טופס בקשת מידע רפואי וויתור סודיות</div>
+  </div>
+
+  <div style="font-size:9.5px; line-height:1.6; border:1px solid #ccc; padding:3px 8px; background:#fafafa; margin-bottom:4px;">
+    יש לחתום על הטופס המצ"ב לפי הנחיות ולרבות חתימה וחותמת עד.<br>
+    <strong>אני החתום מטה:</strong> (במקרה של קטין ירשמו פרטיו על-ידי ההורה)
+  </div>
+
+  <!-- Personal details -->
+  <table class="ftable">
+    <tr>
+      <td class="lbl" style="width:14%">שם משפחה</td>
+      <td style="width:18%"><input type="text" id="b_family"></td>
+      <td class="lbl" style="width:12%">שם פרטי</td>
+      <td style="width:18%"><input type="text" id="b_first"></td>
+      <td class="lbl" style="width:12%">מס' זהות</td>
+      <td style="width:12%"><input type="text" id="b_id" maxlength="9" dir="ltr"></td>
+      <td class="lbl" style="width:10%">שם האב</td>
+      <td><input type="text" id="b_father"></td>
+    </tr>
+    <tr>
+      <td class="lbl">כתובת</td>
+      <td colspan="4"><input type="text" id="b_address"></td>
+      <td class="lbl" colspan="2">טלפון</td>
+      <td><input type="tel" id="b_tel" dir="ltr"></td>
+    </tr>
+  </table>
+
+  <!-- Authorization text -->
+  <div style="font-size:9px; line-height:1.6; border:1px solid var(--border); padding:5px 8px; margin-top:4px; background:#fafafa; max-height: 105px; overflow-y:auto;">
+    נותן רשות לכל עובד רפואי ו/או מוסד רפואי לרבות קופות החולים, רופאיהן, עובדיהן ו/או כל עובד של המוסד לביטוח לאומי ו/או לצבא לישראל ו/או למשרד הביטחון ו/או חברות לביטוח ו/או קרנות הפנסיה ו/או הוועדות ובכלל כל עובד שמציג כתב הרשאה לפעול מטעמי (להלן "המבקשים") וכל כמי שציג כתב הרשאה לפעול מטעמי ללא יוצא מן הכלל ו/או הנפשי ו/או הסוציאלי ו/או השיקומי ו/או הגנטי ו/או כל מחלה שחלה בה בעבר או אני זכאי לה כעת. אני משחרר בזה את כל המוסדות לרבות קופות החולים ו/או כל רופא מרופאיהם ו/או פסיכיאטרים ו/או שיקומיים ו/או הסוציאליים וכל מידע על סודיות, מחובת מסירי המידע וכל מה שיידרש להם הדין ותקנות לגבי סודיות, לפרסם ולמסור לי מנורה ו/או לנציגיה כלל מידע הרפואי ו/או הנפשי ו/או הסוציאלי ו/או השיקומי שיש ברשותם לגבי מצב בריאותי ו/או מחלותי, ומסירי המידע ומנותני השרותים שלהלן לאמסור מידע כאמור או תביעות שיהלן. כל טענה או אישה יהיה חל עפ"י הוראות הפרטיות 1981-א ובתוקפו יהא חל על כל רפואי לרבות קופות החולים ו/או רופאיהם ו/או עובדיהם ו/או מי שמטעמם ו/או מי שנותני השרותים שלהלן. ויתור סודיות זה מחייב את עצבוני, את יורשי, את בית ידין ועל כל מי שיבוא במקומי.
+  </div>
+
+  <!-- Signature section -->
+  <div class="sec-title" style="margin-top:4px;">חתימה</div>
+  <table class="ftable">
+    <tr>
+      <td class="lbl" style="width:14%">תאריך</td>
+      <td style="width:20%"><input type="date" id="b_sig_date" dir="ltr"></td>
+      <td class="lbl" style="width:14%">שם החותם</td>
+      <td style="width:20%"><input type="text" id="b_sig_name"></td>
+      <td class="lbl" style="width:14%">תעודת זהות</td>
+      <td style="width:14%"><input type="text" id="b_sig_id" maxlength="9" dir="ltr"></td>
+      <td class="lbl" style="width:10%">חתימה</td>
+      <td style="width:10%; padding:2px;">
+        <div class="canvas-wrap"><canvas id="sig_b" width="90" height="38"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_b')" style="font-size:8px;">נקה</button>
+      </td>
+    </tr>
+  </table>
+
+  <!-- HMO details -->
+  <div class="sec-title" style="margin-top:4px;">שם קופ"ח</div>
+  <table class="ftable">
+    <tr>
+      <td class="lbl" style="width:18%">שם קופ"ח</td>
+      <td style="width:22%"><input type="text" id="hmo_name"></td>
+      <td class="lbl" style="width:20%">שם קופ"ח קודמת</td>
+      <td style="width:22%"><input type="text" id="hmo_prev"></td>
+      <td class="lbl" style="width:18%">מס' אישי בצה"ל</td>
+      <td><input type="text" id="b_idf" dir="ltr"></td>
+    </tr>
+  </table>
+
+  <!-- Witness -->
+  <div class="sec-title" style="margin-top:4px;">פרטי העד לחתימה</div>
+  <div style="font-size:9px; border:1px solid var(--border); border-top:none; padding:2px 8px; background:#f9f9f9; color:#444;">
+    פרטי העד לחתימה (רופא, אחות, עו"ד, פסיכולוג, עובד סוציאלי, מורשה חתימה בבנק, סוכן ביטוח)
+  </div>
+  <table class="wit-table">
+    <tr>
+      <td class="lbl" style="width:28%">שם מלא של העד ותפקידו</td>
+      <td style="width:26%"><input type="text" id="wit_name" style="width:100%;border:none;border-bottom:1px solid #555;font-family:var(--font);font-size:11px;outline:none;"></td>
+      <td class="lbl" style="width:14%">תעודת זהות</td>
+      <td style="width:16%"><input type="text" id="wit_id" dir="ltr" maxlength="9" style="width:100%;border:none;border-bottom:1px solid #555;font-family:var(--font);font-size:11px;outline:none;"></td>
+      <td class="lbl" style="width:12%">מס' רישיון</td>
+      <td><input type="text" id="wit_license" dir="ltr" style="width:100%;border:none;border-bottom:1px solid #555;font-family:var(--font);font-size:11px;outline:none;"></td>
+    </tr>
+    <tr>
+      <td class="lbl">חתימה וחותמת</td>
+      <td colspan="5" style="padding:2px 5px;">
+        <div class="canvas-wrap" style="display:inline-block;"><canvas id="sig_wit" width="280" height="50"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_wit')">נקה</button>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Minor / Guardian -->
+  <div class="sec-title" style="margin-top:4px;">במקרה של קטין/חוסה – חתימת אפוטרופוס (במקרה של חוסה, יש לצרף כתב מינוי אפוטרופוס)</div>
+  <div class="minor-section">
+    <div style="font-weight:700; font-size:10.5px; margin-bottom:4px; color:var(--navy);">קטין</div>
+    <div class="minor-row">
+      <div class="fg"><label>שם האב</label><input type="text" id="minor_father_name"></div>
+      <div class="fg"><label>מס' זהות</label><input type="text" id="minor_father_id" dir="ltr" maxlength="9"></div>
+      <div class="fg">
+        <label>חתימה</label>
+        <div class="canvas-wrap"><canvas class="sig-sm" id="sig_minor_father" width="130" height="38"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_minor_father')">נקה</button>
+      </div>
+    </div>
+    <div class="minor-row">
+      <div class="fg"><label>שם האם</label><input type="text" id="minor_mother_name"></div>
+      <div class="fg"><label>מס' זהות</label><input type="text" id="minor_mother_id" dir="ltr" maxlength="9"></div>
+      <div class="fg">
+        <label>חתימה</label>
+        <div class="canvas-wrap"><canvas class="sig-sm" id="sig_minor_mother" width="130" height="38"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_minor_mother')">נקה</button>
+      </div>
+    </div>
+    <div style="font-weight:700; font-size:10.5px; margin: 5px 0 4px; color:var(--navy);">אפוטרופוס</div>
+    <div class="minor-row">
+      <div class="fg"><label>שם האפוטרופוס</label><input type="text" id="guardian_name"></div>
+      <div class="fg"><label>מס' זהות</label><input type="text" id="guardian_id" dir="ltr" maxlength="9"></div>
+      <div class="fg">
+        <label>חתימה</label>
+        <div class="canvas-wrap"><canvas class="sig-sm" id="sig_guardian" width="130" height="38"></canvas></div>
+        <button class="sig-clear" onclick="clearSig('sig_guardian')">נקה</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>www.menoramivt.co.il &nbsp;|&nbsp; מיקוד 6100802 &nbsp;|&nbsp; ת.ד. 927 תל-אביב</span>
+    <span class="page-num">עמוד 3 מתוך 3</span>
+    <span>☎ 2000* &nbsp;|&nbsp; 6100802</span>
+  </div>
+</div>
+
+<script>
+// ── Signature pads ──
+function initPad(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+  let drawing = false, last = {};
+  const getPos = (e, c) => {
+    const r = c.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * (c.width / r.width), y: (src.clientY - r.top) * (c.height / r.height) };
+  };
+  canvas.addEventListener('mousedown', e => { drawing = true; last = getPos(e, canvas); });
+  canvas.addEventListener('mousemove', e => {
+    if (!drawing) return;
+    const p = getPos(e, canvas);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+  });
+  canvas.addEventListener('mouseup', () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; last = getPos(e, canvas); }, { passive: false });
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault(); if (!drawing) return;
+    const p = getPos(e, canvas);
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => drawing = false);
+}
+function clearSig(id) {
+  const c = document.getElementById(id);
+  if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+
+// ── Toggles ──
+function toggleComm() {
+  const isEmail = document.getElementById('comm_email').checked;
+  document.getElementById('comm_email_fields').style.display = isEmail ? 'block' : 'none';
+  document.getElementById('comm_mail_fields').style.display = isEmail ? 'none' : 'block';
+}
+function togglePay(radio) {
+  document.getElementById('bank_details').style.display = radio.value === 'bank' ? 'block' : 'none';
+}
+
+// ── Set today's dates ──
+function setDates() {
+  const today = new Date().toISOString().split('T')[0];
+  ['date_agent','date_ins','date_pay','date_decl','b_sig_date'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = today;
+  });
+}
+
+// ── Reset ──
+function resetForm() {
+  if (!confirm('לאפס את כל הטופס?')) return;
+  document.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"]').forEach(el => el.value = '');
+  document.querySelectorAll('input[type="date"]').forEach(el => el.value = '');
+  document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+  document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+  document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+  document.getElementById('comm_email_fields').style.display = 'none';
+  document.getElementById('comm_mail_fields').style.display = 'none';
+  document.getElementById('bank_details').style.display = 'none';
+  ['sig_agent_auth','sig_ins','sig_pay','sig_decl','sig_b','sig_wit','sig_minor_father','sig_minor_mother','sig_guardian'].forEach(clearSig);
+  setDates();
+}
+
+// ── Download PDF ──
+async function downloadPDF() {
+  const btn = document.getElementById('btnPdf');
+  btn.disabled = true; btn.textContent = 'מכין...';
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('page' + i);
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+    const img = canvas.toDataURL('image/jpeg', 0.92);
+    if (i > 1) pdf.addPage();
+    pdf.addImage(img, 'JPEG', 0, 0, 210, 297);
+  }
+  pdf.save('menora-ambulatory-claim.pdf');
+  btn.disabled = false; btn.textContent = 'הורד PDF';
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  ['sig_agent_auth','sig_ins','sig_pay','sig_decl','sig_b','sig_wit','sig_minor_father','sig_minor_mother','sig_guardian'].forEach(initPad);
+  setDates();
+});
+</script>
+</body>
+</html>
