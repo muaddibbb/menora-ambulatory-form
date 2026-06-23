@@ -520,15 +520,21 @@ canvas.sig-sm { display: block; }
   <!-- Signature section -->
   <div class="sec-title" style="margin-top:4px;">חתימה</div>
   <table class="ftable">
+    <colgroup>
+      <col style="width:8%"><col style="width:12%">
+      <col style="width:11%"><col style="width:20%">
+      <col style="width:11%"><col style="width:15%">
+      <col style="width:7%"><col>
+    </colgroup>
     <tr>
-      <td class="lbl" style="width:14%">תאריך</td>
-      <td style="width:20%"><input type="date" id="b_sig_date" dir="ltr"></td>
-      <td class="lbl" style="width:14%">שם החותם</td>
-      <td style="width:20%"><input type="text" id="b_sig_name"></td>
-      <td class="lbl" style="width:14%">תעודת זהות</td>
-      <td style="width:14%"><input type="text" id="b_sig_id" maxlength="9" dir="ltr"></td>
-      <td class="lbl" style="width:10%">חתימה</td>
-      <td style="width:10%; padding:2px;">
+      <td class="lbl">תאריך</td>
+      <td><input type="date" id="b_sig_date" dir="ltr"></td>
+      <td class="lbl">שם החותם</td>
+      <td><input type="text" id="b_sig_name"></td>
+      <td class="lbl">תעודת זהות</td>
+      <td><input type="text" id="b_sig_id" maxlength="9" dir="ltr"></td>
+      <td class="lbl">חתימה</td>
+      <td style="padding:2px;">
         <div class="canvas-wrap"><canvas id="sig_b" width="90" height="38"></canvas></div>
         <button class="sig-clear" onclick="clearSig('sig_b')" style="font-size:8px;">נקה</button>
       </td>
